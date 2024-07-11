@@ -1,11 +1,16 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
+from pymongo.errors import ServerSelectionTimeoutError
 from bson import ObjectId
-import os
 from datetime import datetime
 from flask_jwt_extended import JWTManager, create_access_token
+from dotenv import load_dotenv
+import os
 
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -15,11 +20,22 @@ jwt = JWTManager(app)
     
 CORS(app)
 
-# MongoDB connection
-client = MongoClient('mongodb+srv://vishva2017087:ckGzmJoKMoXkeMuQ@cluster0.i62acyf.mongodb.net/todoapp')
-db = client.get_default_database()  # Get the default database
-app.logger.info("Successfully connected to MongoDB")
-tasks_collection = db['tasks']
+# Retrieve MongoDB URL from environment variables
+mongo_url = os.getenv('mongo_url')
+if not mongo_url:
+    raise EnvironmentError("MONGO_URL not found in environment variables.")
+
+try:
+    client = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
+    client.server_info()  # Attempt to connect and force a server call
+    db = client.get_default_database()  # Get the default database
+    app.logger.info("Successfully connected to MongoDB")
+    tasks_collection = db['tasks']
+except ServerSelectionTimeoutError as e:
+    app.logger.error("Database connection failed.", exc_info=True)
+    raise e
+
+
 
 # Helper function to convert ObjectId to string
 def serialize_object_id(obj):
