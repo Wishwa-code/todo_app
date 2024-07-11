@@ -7,6 +7,7 @@ from datetime import datetime
 from flask_jwt_extended import JWTManager, create_access_token
 from dotenv import load_dotenv
 import os
+from dateutil import parser
 
 
 # Load environment variables
@@ -48,10 +49,16 @@ def serialize_task(task):
     # Helper function to handle datetime or string
     def parse_datetime(dt):
         if isinstance(dt, str):
-            return datetime.fromisoformat(dt.rstrip('Z'))
-        return dt
+            # Remove any trailing 'z' or 'Z' and parse
+            dt = dt.rstrip('zZ')
+            try:
+                return parser.parse(dt)
+            except ValueError:
+                # If parsing fails, return the current UTC time
+                return datetime.utcnow()
+        return dt if isinstance(dt, datetime) else datetime.utcnow()
     
-    dueDate = parse_datetime(task.get('dueDate', datetime.utcnow()))
+    dueDate = parse_datetime(task.get('dueDate')) if 'dueDate' in task else datetime.utcnow()
     created_at = parse_datetime(task.get('created_at', datetime.utcnow()))
     updated_at = parse_datetime(task.get('updated_at', datetime.utcnow()))
 
