@@ -1,0 +1,8 @@
+# Example of a .gitattributes file for language overrides
+
+# Mark all files in the 'docs' directory as HTML
+docs/* linguist-language=HTML
+
+# Exclude images from being analyzed
+*.png linguist-vendored
+*.jpg linguist-vendored
